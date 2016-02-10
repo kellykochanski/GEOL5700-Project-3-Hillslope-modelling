@@ -19,18 +19,20 @@
 %  periods.
 
 % AIM: The Wind River Mountains of WY form low, parabolic hillslopes which
-%  are completely detached from the glacial valleys, far below.
+%  are completely detached from the glacial valleys, far below. However, in
+%  the White Mountains in NH, glacial valleys (which were covered by the
+%  same Laurentide ice sheet) are smooth.
 %  I will investigate which conditions (weathering rate, frost creep rate,
 %  and duration of glacial periods) form disconnected hillslopes as in WY,
 %  and which form smooth hillslope/valley systems as in NH.
 %%-------------------------------------------------------------------------
 % HILLSLOPE VARIABLES AND FUNCTIONS
 % At every point on the hillslope, we track:
-%   x       - horizontal position, measured from hillcrest, m
-%   zB(x,t) - elevation of bedrock,                         m
-%   zS(x,t) - elevation of soil/regolith surface,           m
-%   h (x,t) - soil/regolith thickness (zS-zB),              m
-%   S (x,t) - dzS/dx, slope                                 m/m
+%   x       - horizontal position, measured from hillcrest, m, vector in i
+%   zB(x,t) - elevation of bedrock,                         m, vector in i
+%   zS(x,t) - elevation of soil/regolith surface,           m, vector in i
+%   h (x,t) - soil/regolith thickness (zS-zB),              m, vector in i
+%   S (x,t) - dzS/dx, slope                                 m/m, vector, i
 %
 %   w(h)    - weathering rate                               m/yr
 %   q(S)    - regolith movement rate                        m/yr
@@ -51,7 +53,7 @@ w = @(h) 10^-5; %                                          m/yr
 
 %% Frost creep - effective diffusivity
 % Following Anderson 2002, Fig. 9
-max_diffusivity = 0.03; % m^2/yr
+max_diffusivity = 0.02; % m^2/yr
 k_eff = @(h) max_diffusivity.*(1-exp(-h.*2));
 
 %% Glacial incision
@@ -59,7 +61,7 @@ k_eff = @(h) max_diffusivity.*(1-exp(-h.*2));
 % or "off" during interglacials.
 %incision in valley during glacial,                         m/yr
 % This increases away from the edge to make a more U-like valley
-glacial_incision = @(x) (-x+N*dx)/10^4; 
+glacial_incision = @(x,N) (-x+N*dx)/10^4; 
 glacial_duration = 1000; %duration of glacial period,       yr
 glacial_starts   = [-11000, -23000, -35000]; %last glacial started...yrs ago
 
@@ -90,7 +92,7 @@ end_time = 5*10^4; % years in future
 dt       = dx.^2/4/max_diffusivity; %highest stable step    yrs
 
 % Measure time in years before present
-t = - tot_time; 
+t = - start_time; 
 zB = zB0; zS = zS0;
 plot(xvector, zB0, 'k'); hold on
 plot(xvector, zS0, 'g');
@@ -140,7 +142,7 @@ while t < end_time;
     
     % If glaciated, in valley glacier incises and takes away lots of soil
     zS = zS - is_glaciated.*is_valley.*dt.*h;
-    zB = zB - is_glaciated.*is_valley.*glacial_incision(xvector).*dt;
+    zB = zB - is_glaciated.*is_valley.*glacial_incision(xvector,N).*dt;
     
     % Make sure soil never has negative thickness
     zS               = max(zS, zB);
